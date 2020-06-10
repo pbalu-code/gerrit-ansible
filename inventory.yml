@@ -1,0 +1,12 @@
+---
+all:
+  children:
+    gerrit:
+      hosts:
+        gerrit1:
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+          ansible_host: 192.168.189.3
+          ansible_port: 22
+          ansible_user: ansible
+          ansible_connection: ssh
+          ansible_ssh_pass: ansible

@@ -1,0 +1,213 @@
+---
+- debug:
+    msg: "Centos version: {{ ansible_distribution_version }}"
+
+- set_fact: Force_ssl=false
+  when: Force_ssl is undefined
+
+- name: Install Apache2 (httpd)
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - httpd
+    - mod_ssl
+    - python-passlib
+    state: latest
+
+- name: Remove welcome pages's conf
+  file:
+    path: /etc/httpd/conf.d/welcome.conf
+    state: absent
+
+- name: Remove autoindex conf
+  file:
+    path: /etc/httpd/conf.d/autoindex.conf
+    state: absent
+
+
+- name: Remove any ScriptAliases.
+  lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^ScriptAlias.*$'
+    line: "#ScriptAlias"
+
+- name: Remove any Aliases.
+  lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^Alias.*$'
+    line: "#Alias"
+
+- name: Disable Alias module
+  lineinfile:
+    path: /etc/httpd/conf.modules.d/00-base.conf
+    regexp: "^(LoadModule alias_module.*)"
+    line: '#\1'
+    backrefs: yes
+
+- name: Deny access to all files started with dot..
+  lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^<Files "\.ht\*">'
+    line: '<Files ".*">'
+
+- name: Remove default access to /var/www/html
+  replace:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^<Directory "/var/www/html">(.*\n)*?</Directory>$'
+    replace: ''
+
+- name: Remove default access to /var/www
+  replace:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^<Directory "/var/www">(.*\n)*?</Directory>$'
+    replace: ''
+
+- name: Set Listen httpd
+  lineinfile:
+    regexp: '^Listen.*$'
+    path: /etc/httpd/conf/httpd.conf
+    line: "Listen 0.0.0.0:80"
+
+- name: Set Httpd server's token
+  lineinfile:
+    regexp: '^ServerTokens.*'
+    path: /etc/httpd/conf/httpd.conf
+    line: "ServerTokens Minimal"
+
+- name: Set Httpd server's signature
+  lineinfile:
+    regexp: '^ServerSignature.*'
+    path: /etc/httpd/conf/httpd.conf
+    line: "ServerSignature Off"
+
+- name: Set Httpd - Trace Off
+  lineinfile:
+    regexp: '^TraceEnable.*'
+    path: /etc/httpd/conf/httpd.conf
+    line: "TraceEnable Off"
+
+- name: Set Httpd - Doc root
+  lineinfile:
+    regexp: '^DocumentRoot.*'
+    path: /etc/httpd/conf/httpd.conf
+    line: "#DocumentRoot /var/www/html"
+
+- name: Set ServerName
+  lineinfile:
+    regexp: '^ServerName.*$'
+    path: /etc/httpd/conf/httpd.conf
+    line: "ServerName {{ lookup('env', 'gerrit_fqnd') | default('gerrit.local', true) }}"
+#  when: Vhost_name is defined
+
+- name: Httpd proxy conf
+  template:
+    dest: /etc/httpd/conf.d/proxy.conf
+    src: proxy.conf.j2
+    owner: root
+    group: apache
+    mode: '0644'
+
+- name: SSL Set to listen only IPV4
+  lineinfile:
+    regexp: '^Listen.*$'
+    path: /etc/httpd/conf.d/ssl.conf
+    line: Listen 0.0.0.0:443 https
+
+- name: Own SSL
+  block:
+  - name: Set SSL Certfile line
+    lineinfile:
+      path: /etc/httpd/conf.d/ssl.conf
+      regex: '^SSLCertificateFile.*$'
+      line: "SSLCertificateFile /etc/pki/tls/certs/{{ SSL_cert_name }}"
+  - name: Set SSL key option
+    lineinfile:
+      path: /etc/httpd/conf.d/ssl.conf
+      regex: '^SSLCertificateKeyFile.*$'
+      line: "SSLCertificateKeyFile /etc/pki/tls/private/{{ SSL_key_name }}"
+  - name: Set SSL cert chain
+    lineinfile:
+      path: /etc/httpd/conf.d/ssl.conf
+      regex: '^SSLCertificateChainFile.*$'
+      line: "SSLCertificateChainFile /etc/pki/tls/certs/{{ SSL_certchain_name }}"
+  - name: Set SSL Protocoll
+    lineinfile:
+      path: /etc/httpd/conf.d/ssl.conf
+      regex: '^SSLProtocol.*$'
+      line: "SSLProtocol             all -SSLv2 -SSLv3"
+  - name: Set SSL CipherSuite
+    lineinfile:
+      path: /etc/httpd/conf.d/ssl.conf
+      regex: '^SSLCipherSuite .*$'
+      line: "SSLCipherSuite          ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS"
+  - name: Set SSLHonorCipherOrder
+    lineinfile:
+      path: /etc/httpd/conf.d/ssl.conf
+      regex: '^SSLHonorCipherOrder.*$'
+      line: "SSLHonorCipherOrder     on"
+  - name: Set SSLCompression
+    lineinfile:
+      path: /etc/httpd/conf.d/ssl.conf
+      regex: '^SSLCompression.*$'
+      line: "SSLCompression     off"
+  - name: Set SSLOptions
+    lineinfile:
+      path: /etc/httpd/conf.d/ssl.conf
+      regex: '^SSLOptions.*$'
+      line: "SSLOptions +StrictRequire"
+  - name: Upload SSL Key
+    copy:
+      src: "files/{{ SSL_key_name }}"
+      dest: "/etc/pki/tls/private/{{ SSL_key_name }}"
+      owner: root
+      group: root
+      mode: '0600'
+  - name: Upload SSL Cert chain
+    copy:
+      src: "files/{{ SSL_certchain_name }}"
+      dest: "/etc/pki/tls/certs/{{ SSL_certchain_name }}"
+      owner: root
+      group: root
+      mode: '0600'
+  - name: Upload SSL Cert
+    copy:
+      src: "files/{{ SSL_cert_name }}"
+      dest: "/etc/pki/tls/certs/{{ SSL_cert_name }}"
+      owner: root
+      group: root
+      mode: '0600'
+  when: Install_SSL_cert
+
+
+- name: HTPassword
+  htpasswd:
+    path: /etc/httpd/conf/.htpassword
+    name: "{{ item.user }}"
+    password: "{{ item.password }}"
+    owner: root
+    group: apache
+    mode: 0640
+  with_items: "{{ gerrit_accounts }}"
+
+
+- name: Set httpd_can_network_connect flag on and keep it persistent across reboots
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+- name: Set httpd canconnect LDAP flag on and keep it persistent across reboots
+  seboolean:
+    name: httpd_can_connect_ldap
+    state: yes
+    persistent: yes
+- name: Enable service httpd, and not touch the state
+  become: true
+  service:
+    name: httpd
+    enabled: yes
+    state: started
+
+- debug: msg="Restart Apahe2"
+  changed_when: True
+  notify: restart Apache2

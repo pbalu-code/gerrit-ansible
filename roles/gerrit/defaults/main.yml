@@ -1,0 +1,21 @@
+#Gerrit Defaults main.yml
+---
+gerrit_cofigs:
+  - section: "gerrit"
+    option: 'canonicalWebUrl'
+    value: "http://{{ gerrit_fqnd }}/"
+  - section: "container"
+    option: 'user'
+    value: "gerrit"
+  - section: "auth"
+    option: 'type'
+    value: "HTTP"
+  - section: "httpd"
+    option: "listenUrl"
+    value: "http://127.0.0.1:8080/"
+  - section: "auth"
+    option: "logoutUrl"
+    value: "http://aa:aa@{{ gerrit_fqnd }}/logout"
+  - section: "sshd"
+    option: "listenAddress"
+    value: "*:29418"

@@ -1,0 +1,100 @@
+#gerrit/main.yml
+---
+- name: Install dependency
+  package:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - git
+#      - java-1.8.0-openjdk.x86_64
+#      - java-1.8.0-openjdk-devel
+      - java-1.8.0-openjdk
+
+
+- name: Create Gerrit group
+  group:
+    name: gerrit
+    system: yes
+
+- name: Create gerrit user
+  user:
+    name: gerrit
+    group: gerrit
+    home: "{{ gerrit_home }}"
+    system: yes
+    seuser: system_u
+
+- name: Create Gerrit folder
+  file:
+    path: "{{ gerrit_home }}"
+    state: directory
+    seuser: system_u
+    owner: gerrit
+    group: gerrit
+    mode: '0775'
+    serole: object_r
+ #   setype: tomcat_exec_t
+
+- name: populate /etc/default/gerritcodereview
+  lineinfile:
+    dest: "/etc/default/gerritcodereview"
+    state: present
+    regexp: "^GERRIT_SITE="
+    line: "GERRIT_SITE={{ gerrit_home }}"
+    create: yes
+
+- name: Check Gerrit state
+  stat:
+    path: "{{ gerrit_home }}/bin/gerrit.war"
+  register: gerrit_war
+
+- block:
+  - name: Download gerrit war
+    get_url:
+      url: "{{ gerrit_download_url }}"
+      dest: /opt/gerrit.war
+      mode: '0664'
+      owner: gerrit
+      group: gerrit
+
+  - name: Init Gerrit
+    become: true
+    become_user: gerrit
+    #command: "java -jar /opt/gerrit.war init --batch --dev -d {{ gerrit_home }} --install-plugin=download-commands"
+    command: "java -jar /opt/gerrit.war init --batch --dev -d {{ gerrit_home }} --install-plugin=download-commands --install-all-plugins"
+    register: Gerrit_init
+
+  - debug:
+      var: Gerrit_init
+
+  - name: cleanup war
+    file:
+      path: /opt/gerrit.war
+      state: absent
+  when: not gerrit_war.stat.exists
+
+- name: Install inet.d script
+  file:
+    src: "{{ gerrit_home }}/bin/gerrit.sh"
+    dest: /etc/init.d/gerrit
+    state: link
+    mode: "0755"
+
+- name: Make some config change
+  ini_file:
+    path: "{{ gerrit_home }}/etc/gerrit.config"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items: "{{ gerrit_cofigs }}"
+  notify: gerrit_restart
+
+- name: Let's there be a light! Start Gerrit
+  service:
+    name: gerrit
+    state: started
+    enabled: yes
+    use: service
+
+
+

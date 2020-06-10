@@ -1,0 +1,20 @@
+<VirtualHost *>
+    ServerName {{ gerrit_fqnd }}
+    ProxyRequests Off
+    ProxyVia Off
+    ProxyPreserveHost On
+
+    <Proxy *>
+        Order deny,allow
+        Allow from all
+    </Proxy>
+<Location "/login/">
+AuthType Basic
+AuthName "Gerrit Code Review"
+AuthBasicProvider file
+AuthUserFile '/etc/httpd/conf/.htpassword'
+Require valid-user
+</Location>
+AllowEncodedSlashes On
+ProxyPass / http://127.0.0.1:8080/ nocanon
+</VirtualHost>

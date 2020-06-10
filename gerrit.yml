@@ -1,0 +1,16 @@
+#gerrit Playbook
+---
+- hosts: gerrit
+  gather_facts: yes
+  become: true
+  roles:
+    - base
+    - gerrit
+    - apache2-proxy
+
+
+
+  post_tasks:
+    - name:
+      debug:
+        msg="CMDBuild http://gerrit.local/"

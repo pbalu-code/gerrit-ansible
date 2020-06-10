@@ -1,0 +1,17 @@
+[Unit]
+Description=Web based code review and project management for Git based projects
+After=network.target
+
+[Service]
+Type=forking
+User=gerrit
+EnvironmentFile=/etc/default/gerritcodereview
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=gerrit
+ExecStart={{ gerrit_home }}/bin/gerrit.sh start
+ExecStop={{ gerrit_home }}/bin/gerrit.sh stop
+PIDFile={{ gerrit_home }}/logs/gerrit.pid
+
+[Install]
+WantedBy=multi-user.target

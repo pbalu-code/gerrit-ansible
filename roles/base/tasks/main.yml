@@ -1,0 +1,32 @@
+# base/main.yml
+---
+- name: Put SELinux in permissive mode, logging actions that would be blocked.
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: Set enforce 0
+  command: "setenforce 0"
+
+- name: Set timezone
+  timezone:
+    name: "{{ zone }}"
+
+- name: Base OS things (Centos/RHEL 7,8)
+  become: yes
+  package:
+    name: epel-release
+    state: present
+
+
+- name: Install base tools Centos 8
+  package:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - policycoreutils
+    - selinux-policy-devel
+    - unzip
+    - mc
+    - net-tools
+    - tar

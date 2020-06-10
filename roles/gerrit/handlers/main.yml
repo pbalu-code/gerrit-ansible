@@ -1,0 +1,7 @@
+#gerrit/handlers/main.yml
+---
+- name: gerrit_restart
+  service:
+    name: gerrit
+    state: restarted
+

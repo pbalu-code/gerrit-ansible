@@ -1,0 +1,21 @@
+#group_vars/gerrit.yml
+---
+locale: en_GB.UTF-8
+zone: Europe/Budapest
+zoneinfo_path: /usr/share/zoneinfo/Europe/Budapest
+gerrit_home: /opt/gerrit
+#gerrit_version: "3.1.5" Latest.
+gerrit_version: "2.15.1"
+gerrit_download_url: "https://gerrit-releases.storage.googleapis.com/gerrit-{{ gerrit_version }}.war"
+#Hostfile!!!!
+gerrit_fqnd: "gerrit.local"
+
+#Apache2 htpasswd
+gerrit_accounts:
+  - user: "gerrituser"
+    password: "password123"
+
+#gitlist_htdigest:
+#    - name: gerrituser
+#      realm: "Gerrit Code Review"
+#      password: "{{ 'gerrituser:Gerrit Code Review:tigra123'|hash('md5') }}"

@@ -1,0 +1,3 @@
+{% for user in gitlist_htdigest %}
+{{ user.name }}:{{ user.realm }}:{{ user.password }}
+{% endfor %}
