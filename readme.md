@@ -1,7 +1,9 @@
 Gerrit P.O.C.
 -----
 This is a demo instance of gerrit ansible script for testing purposes.
+
 It uses apache2 htpassword for authentication!!!
+
 You must upload a public key to be able to do whatever too!
 
 Use ssh method for clone / push / pull
