@@ -1,11 +1,8 @@
 Gerrit P.O.C.
 -----
-This is a demo instance of gerrit ansible script for testing purposes.
-
-It uses apache2 htpassword for authentication!!!
-
-You must upload a public key to be able to do whatever too!
-
+This is a demo instance of gerrit ansible script for testing purposes.  
+It uses apache2 htpassword for authentication!!!  
+You must upload a public key to be able to do whatever too!  
 Use ssh method for clone / push / pull
 
 OS: Centos 7
@@ -22,10 +19,8 @@ Usage:
 Run: ansible-playbook -i inventory.yml gerrit.yml
 ```
 
-Url: http://gerrit.local/
-
-Default user: gerrituser
-
-Password: password123
+Url: http://gerrit.local/  
+Default user: gerrituser  
+Password: password123  
 
 ___Enjoy!___
